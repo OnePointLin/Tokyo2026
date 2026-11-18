@@ -517,7 +517,8 @@
         bub.style.setProperty('--bg','var(--'+ICON_COLOR[ic]+')');bub.appendChild(icon(ic));
         what.appendChild(bub);what.appendChild(el('b',null,p.title));
         if(p.note)what.appendChild(el('span','n',p.note));
-        if(p.desc)what.appendChild(el('span','d',p.desc));
+        var isBN=p.alt&&/^支線[：:]/.test(p.desc||'');
+        if(p.desc&&!isBN)what.appendChild(el('span','d',p.desc));
         if(p.map&&/^https:\/\//.test(p.map)){
           var a0=el('a','maplink');a0.href=p.map;a0.target='_blank';a0.rel='noopener';
           a0.appendChild(icon('pin',''));a0.appendChild(document.createTextNode('Google 地圖'));what.appendChild(a0);
@@ -536,7 +537,7 @@
         li.appendChild(el('span','t',p.time||(p.near?'附近':'')));li.appendChild(what);
         if(p.alt){
           if(!branchOl){
-            var bli=el('li','branch');bli.appendChild(el('span','branch-note','支線：看當天時間決定要不要走'));
+            var bli=el('li','branch');bli.appendChild(el('span','branch-note',isBN?p.desc:'支線'));
             branchOl=el('ol','tl-branch');bli.appendChild(branchOl);ol.appendChild(bli);
           }
           branchOl.appendChild(li);
