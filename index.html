@@ -208,6 +208,26 @@
   .neartag{display:inline-block;font-size:11px;font-weight:400;padding:0 7px;margin-left:6px;border:1.4px dashed var(--ink);border-radius:999px;background:var(--paper);vertical-align:2px}
   .chkline{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:15px;cursor:pointer}
   .chkline input{width:18px;height:18px;accent-color:var(--ink)}
+
+  ol.tl li.move .t{font-size:13px;padding-top:6px}
+  ol.tl li.move .ic-bub{border-style:dashed;background:#fff !important}
+  ol.tl li.move b{font-weight:500;font-size:15px;color:var(--soft)}
+  ol.tl li.move .n{color:var(--ink)}
+
+  ol.tl li.alt .ic-bub{border-style:dashed;transform:scale(.88)}
+  ol.tl li.alt .t{color:#8c6bb3}
+  ol.tl li.alt b{font-weight:500}
+  .alttag{display:inline-block;font-size:11px;font-weight:400;padding:0 7px;margin-left:6px;border:1.4px dashed #8c6bb3;color:#6b4f8f;border-radius:999px;background:var(--lilac);vertical-align:2px}
+
+  /* 支線：另一條平行虛線，從主線分出去、最後再接回來 */
+  ol.tl li.branch{display:block;position:relative;padding:16px 0}
+  ol.tl-branch{list-style:none;margin:0;padding:0;position:relative}
+  ol.tl-branch::before{content:"";position:absolute;left:125px;top:10px;bottom:10px;border-left:2.2px dashed #8c6bb3}
+  ol.tl-branch li{display:grid;grid-template-columns:50px 1fr;gap:20px;padding:6px 0;position:relative}
+  ol.tl-branch li .what{margin-left:40px}
+  ol.tl li.branch::before{content:"";position:absolute;left:84px;top:0;width:41px;height:26px;border-top:2.2px dashed #8c6bb3;border-right:2.2px dashed #8c6bb3;border-top-right-radius:20px}
+  ol.tl li.branch::after{content:"";position:absolute;left:84px;bottom:0;width:41px;height:26px;border-bottom:2.2px dashed #8c6bb3;border-right:2.2px dashed #8c6bb3;border-bottom-right-radius:20px}
+  .branch-note{display:block;font-size:12px;color:#8c6bb3;margin:0 0 4px 138px}
 </style>
 </head>
 <body>
@@ -308,6 +328,7 @@
     <h3 id="planTitle">新增行程</h3>
     <label class="fld"><span>時間</span><input id="pfTime" maxlength="12" placeholder="例：上午、下午、09:30（附近景點可留空）"></label>
     <label class="chkline"><input type="checkbox" id="pfNear">附近景點（順路有空再去）</label>
+    <label class="chkline"><input type="checkbox" id="pfAlt">支線（備案，主要行程走不了才走）</label>
     <label class="fld"><span>行程</span><input id="pfName" maxlength="40" required placeholder="例：東京鐵塔"></label>
     <label class="fld"><span>備註</span><input id="pfNote" maxlength="80" placeholder="例：車站或飯店（可留空）"></label>
     <label class="fld"><span>簡介</span><textarea id="pfDesc" maxlength="200" rows="3" placeholder="簡單介紹這個景點（可留空）"></textarea></label>
@@ -489,6 +510,7 @@
       var d=ol.getAttribute('data-day'), list=dayPlans(d), ed=!!editing[d];
       ol.innerHTML='';
       if(!list.length)ol.appendChild(el('li','tl-empty','還沒有行程'));
+      var branchOl=null;
       list.forEach(function(p,i){
         var li=el('li'), what=el('span','what'), bub=el('span','ic-bub');
         var ic=ICON_COLOR[p.icon]?p.icon:'map';
@@ -508,8 +530,17 @@
           a.appendChild(btn('刪除','trash',function(){askDelete(this,p)},'danger'));
           what.appendChild(a);
         }
+        if(p.time==='移動')li.className='move';
+        if(p.alt){li.className='alt';var tb2=what.querySelector('b');if(tb2)tb2.appendChild(el('span','alttag','支線'));}
         if(p.near){li.className='near';var tb=what.querySelector('b');if(tb)tb.appendChild(el('span','neartag','附近景點'));}
-        li.appendChild(el('span','t',p.time||(p.near?'附近':'')));li.appendChild(what);ol.appendChild(li);
+        li.appendChild(el('span','t',p.time||(p.near?'附近':'')));li.appendChild(what);
+        if(p.alt){
+          if(!branchOl){
+            var bli=el('li','branch');bli.appendChild(el('span','branch-note','支線：看當天時間決定要不要走'));
+            branchOl=el('ol','tl-branch');bli.appendChild(branchOl);ol.appendChild(bli);
+          }
+          branchOl.appendChild(li);
+        }else{branchOl=null;ol.appendChild(li);}
       });
       var tools=document.querySelector('.plan-tools[data-day="'+d+'"]');
       if(tools){
@@ -540,7 +571,7 @@
     editDay=d;editId=p?p.id:null;
     $('planTitle').textContent=p?'修改行程':'新增行程';
     $('pfTime').value=p?p.time:'';$('pfName').value=p?p.title:'';$('pfNote').value=p?p.note:'';
-    $('pfDesc').value=p&&p.desc?p.desc:'';$('pfNear').checked=!!(p&&p.near);$('pfMap').value=p&&p.map?p.map:'';
+    $('pfDesc').value=p&&p.desc?p.desc:'';$('pfNear').checked=!!(p&&p.near);$('pfAlt').checked=!!(p&&p.alt);$('pfMap').value=p&&p.map?p.map:'';
     var ic=p&&ICON_COLOR[p.icon]?p.icon:'map';
     pfIcons.querySelectorAll('input').forEach(function(r){r.checked=r.value===ic});
     $('pfErr').textContent='';modal.hidden=false;
@@ -560,7 +591,7 @@
     var sel=pfIcons.querySelector('input:checked');
     var mp=$('pfMap').value.trim();
     if(mp&&!/^https:\/\/(www\.google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps)/.test(mp)){$('pfErr').textContent='請貼 Google 地圖的連結';return;}
-    var data={id:editId,day:editDay,time:$('pfTime').value.trim(),title:title,note:$('pfNote').value.trim(),desc:$('pfDesc').value.trim(),map:mp,near:$('pfNear').checked,icon:sel?sel.value:'map'};
+    var data={id:editId,day:editDay,time:$('pfTime').value.trim(),title:title,note:$('pfNote').value.trim(),desc:$('pfDesc').value.trim(),map:mp,near:$('pfNear').checked,alt:$('pfAlt').checked,icon:sel?sel.value:'map'};
     var sb=$('pfSave');sb.disabled=true;$('pfErr').textContent='儲存中…';
     sendPlan('planSave',data).then(function(ok){
       sb.disabled=false;
