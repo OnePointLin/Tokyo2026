@@ -124,6 +124,7 @@
   .pin-box button{font:inherit;cursor:pointer;border:2px solid var(--ink);border-radius:14px 12px 16px 10px;background:var(--yellow);color:var(--ink);padding:6px 16px;box-shadow:2px 2px 0 var(--ink)}
   .pin-box button:disabled{opacity:.6}
   .pin-err{flex-basis:100%;margin:0;min-height:1.4em;font-size:14px;color:var(--red)}
+  button.who{font-family:inherit;line-height:1.5;cursor:pointer}button.who::after{content:'';display:inline-block;width:0;height:0;margin-left:5px;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:4.5px solid var(--ink);vertical-align:2px}
   .who{font-style:normal;display:inline-block;margin-left:6px;font-size:12px;padding:0 8px;border-radius:999px;border:1.5px solid var(--ink);background:var(--mint);color:var(--ink);vertical-align:1px;text-decoration:none}
   .hi{font-weight:700;color:var(--ink)}
 
@@ -459,7 +460,12 @@
       var cb=document.createElement('input');cb.type='checkbox';cb.checked=!!it.d;
       cb.onchange=function(){toggle(it,cb.checked)};
       var sp=document.createElement('span');sp.textContent=String(it.t||'');
-      if(it.d&&it.by){var w=document.createElement('em');w.className='who';w.textContent=it.by+' 完成';sp.appendChild(w);}
+      if(it.d){
+        var w=document.createElement('button');w.type='button';w.className='who';
+        w.textContent=it.by?it.by+' 完成':'誰完成？';w.title='點一下換成另一個人';w.setAttribute('aria-label',(it.by?it.by+' 完成':'還沒標記誰完成')+'，點一下換人');
+        w.onclick=function(e){e.preventDefault();e.stopPropagation();switchBy(it);};
+        sp.appendChild(w);
+      }
       lab.appendChild(cb);lab.appendChild(sp);li.appendChild(lab);
       var del=document.createElement('button');del.type='button';del.className='del';del.textContent='×';del.setAttribute('aria-label','刪除');
       del.onclick=function(){remove(it)};li.appendChild(del);
@@ -486,6 +492,11 @@
       .catch(function(e){busy--;fail(e);refresh();});
   }
   function toggle(it,v){it.d=v;it.by=v?me:'';render();send('toggle',{id:it.id,done:v});}
+  function switchBy(it){
+    if(members.length<2)return;
+    var i=members.indexOf(it.by), nx=members[(i+1)%members.length];
+    it.by=nx;render();send('setBy',{id:it.id,by:nx});
+  }
   function remove(it){items=items.filter(function(x){return x!==it});render();send('remove',{id:it.id});}
 
 
