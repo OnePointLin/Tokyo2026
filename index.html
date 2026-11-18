@@ -532,7 +532,7 @@
           what.appendChild(a);
         }
         if(p.time==='移動')li.className='move';
-        if(p.alt){li.className='alt';var tb2=what.querySelector('b');if(tb2)tb2.appendChild(el('span','alttag','支線'));}
+        if(p.alt)li.className='alt';
         if(p.near){li.className='near';var tb=what.querySelector('b');if(tb)tb.appendChild(el('span','neartag','附近景點'));}
         li.appendChild(el('span','t',p.time||(p.near?'附近':'')));li.appendChild(what);
         if(p.alt){
